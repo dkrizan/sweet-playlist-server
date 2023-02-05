@@ -11,7 +11,7 @@ password = os.getenv('PASSWORD')
 if email is None or password is None:
     raise Exception("Env variables USERNAME or PASSWORD not set.")
 
-HOST = "localhost"
+HOST = "0.0.0.0"
 PORT = 8888
 API_HOST = 'api.sweet.tv'
 
@@ -177,6 +177,11 @@ def playlist():
         t = "#EXTM3U\n" + t
     response.content_type = 'text/plain; charset=UTF-8'
     return t
+
+
+@route("/")
+def index():
+    return "Sweet.tv IPTV server"
 
 
 if __name__ == '__main__':
