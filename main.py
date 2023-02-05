@@ -7,6 +7,7 @@ from bottle import route, response, redirect, run, template
 
 email = os.getenv('USERNAME')
 password = os.getenv('PASSWORD')
+server_url = os.getenv('SERVER_URL')
 
 if email is None or password is None:
     raise Exception("Env variables USERNAME or PASSWORD not set.")
@@ -14,6 +15,7 @@ if email is None or password is None:
 HOST = "0.0.0.0"
 PORT = 8888
 API_HOST = 'api.sweet.tv'
+SERVER_URL = server_url if server_url is not None else "http://" + HOST + ":" + str(PORT)
 
 UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0'
 HEADERS = {
@@ -179,7 +181,7 @@ def playlist():
         t += '#EXTINF:-1 provider="Sweet TV" group-title="' + y["group"] + '"' + ' tvg-logo="' + y["logo"] + '"'
         if str(x) in epg_mappings:
             t += ' tvg-id="' + epg_mappings[str(x)] + '"'
-        t += catchup + y["name"] + "\n" + input_stream + "http://" + str(HOST) + ":" + str(PORT) + "/play/" + str(x) + "\n"
+        t += catchup + y["name"] + "\n" + input_stream + SERVER_URL + "/play/" + str(x) + "\n"
     if t != "":
         t = "#EXTM3U\n" + t
     response.content_type = 'text/plain; charset=UTF-8'
