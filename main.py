@@ -169,9 +169,16 @@ def play(channel_id):
 
 @route("/playlist")
 def playlist():
+    try:
+        with open("./epg_mappings.json", 'r') as _epgMappingFile:
+            epg_mappings = json.load(_epgMappingFile)
+    except (FileNotFoundError, json.decoder.JSONDecodeError):
+        epg_mappings = {}
     t = ""
     for x, y in channels().items():
         t += '#EXTINF:-1 provider="Sweet TV" group-title="' + y["group"] + '"' + ' tvg-logo="' + y["logo"] + '"'
+        if str(x) in epg_mappings:
+            t += ' tvg-id="' + epg_mappings[str(x)] + '"'
         t += catchup + y["name"] + "\n" + input_stream + "http://" + str(HOST) + ":" + str(PORT) + "/play/" + str(x) + "\n"
     if t != "":
         t = "#EXTM3U\n" + t
