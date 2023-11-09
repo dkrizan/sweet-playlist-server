@@ -3,7 +3,10 @@ import os
 import requests
 import uuid
 import time
+import re
 from bottle import route, response, redirect, run, template
+import traceback
+import functools
 
 email = os.getenv('USERNAME')
 password = os.getenv('PASSWORD')
@@ -24,23 +27,33 @@ HEADERS = {
 }
 SHARED_DATA = {
     'device': {
-        'type': 'DT_Web_Browser',
+        'type': 'DT_SmartTV',
         'application': {
             'type': 'AT_SWEET_TV_Player'
         },
         'model': UA,
         'firmware': {
             'versionCode': 1,
-            'versionString': '3.2.57'
+            'versionString': '3.2.80'
         },
-        'supported_drm': {'widevine_modular': True},
+        'supported_drm': {
+            'widevine_modular': True
+        },
         'screen_info': {
             'aspectRatio': 6,
-            'width': 1366,
-            'height': 768
+            'width': 1920,
+            'height': 1080
         }
     }
 }
+COMMON_STREAM_HEADERS = {
+    "User-Agent": UA,
+    "Origin": "https://sweet.tv",
+    "Referer": "https://sweet.tv",
+    "Accept-encoding": "gzip",
+    'Accept-language': 'sk',
+}
+
 
 # Load saved token
 try:
@@ -53,6 +66,9 @@ stream_id = None
 catchup = ' catchup="append" catchup-source="?utc={utc}&utcend={utcend}",'
 input_stream = "#KODIPROP:inputstream=inputstream.adaptive\n#KODIPROP:inputstream.adaptive.manifest_type=hls\n" \
                "#KODIPROP:mimetype=application/x-mpegURL\n"
+
+api_session = requests.Session()
+api_session.request = functools.partial(api_session.request, timeout=10)  # set timeout for all session calls
 
 
 def login():
@@ -151,14 +167,16 @@ def get_stream(_channel_id):
         req = requests.post("https://" + API_HOST + "/TvService/OpenStream.json", json=data, headers=headers).json()
         if req["result"] == "OK":
             stream_id = str(req["stream_id"])
-            return "https://" + req["http_stream"]["host"]["address"] + req["http_stream"]["url"]
-    except:
+            return "http://" + req["http_stream"]["host"]["address"] + ":" + str(req["http_stream"]["host"]["port"]) + req["http_stream"]["url"]
+    except Exception as exc:
+        print(exc.args)
         pass
     return "https://sledovanietv.sk/download/noAccess-cs.m3u8"
 
 
 @route("/channels")
 def show_channels():
+    response.content_type = 'application/json'
     return template(json.dumps(channels()))
 
 
